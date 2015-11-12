@@ -1,6 +1,10 @@
-# DOCKER-VERSION 0.1.0
+# DOCKER-VERSION 0.1.0 DevOps/Developer container env
 FROM      ubuntu:14.04
 MAINTAINER Diep Le
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV TERM xterm
+ENV TIMEZONE Europe/London
 
 # make sure the package repository is up to date
 RUN echo "deb http://archive.ubuntu.com/ubuntu trusty main universe" > /etc/apt/sources.list
@@ -23,10 +27,7 @@ RUN update-java-alternatives -s java-8-oracle
 RUN echo "export JAVA_HOME=/usr/lib/jvm/java-8-oracle" >> ~/.bashrc
 
 # install utilities
-RUN apt-get -y install vim git sudo zip bzip2 fontconfig curl && apt-get clean
-
-# install maven
-RUN apt-get -y install maven && apt-get clean
+RUN apt-get -y install vim git sudo zip bzip2 fontconfig curl expect tig ssh-client maven && apt-get clean
 
 # install node.js from PPA
 #RUN add-apt-repository ppa:chris-lea/node.js
@@ -66,9 +67,26 @@ RUN \
   bash /tmp/config && \
   rm -f /tmp/config
 
+
+# timezone
+RUN echo $TIMEZONE > /etc/timezone && dpkg-reconfigure tzdata
+
+# chefdk
+RUN apt-get update \
+  && curl -L https://www.opscode.com/chef/install.sh | sudo bash -s -- -P chefdk
+
+#https://github.com/berkshelf/berkshelf-api/issues/112#issuecomment-44171378
+ENV LANG en_US.UTF-8
+RUN locale-gen $LANG
+
+
 # Copy the script attached to /usr/local/bin
 # The script needs to be in the same directory as the Dockerfile
 COPY script.sh /usr/local/bin/
+
+# presets
+#ADD vimrc /root/.vimrc
+ADD vimrc /home/devops/.vimrc
 
 # Define mountable directories for mysql. 
 VOLUME ["/etc/mysql", "/var/lib/mysql"]
